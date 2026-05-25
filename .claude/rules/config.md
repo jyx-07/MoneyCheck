@@ -1,29 +1,26 @@
 ---
 paths:
-  - "**/application*.yml"
-  - "**/application*.yaml"
-  - "**/bootstrap*.yml"
+  - "**/*.env*"
+  - "**/mikro-orm.config.ts"
+  - "**/app.module.ts"
 ---
 
 # Configuration Rules
 
-- Sensitive values (DB credentials, JWT secrets): inject via environment variables or GitHub Secrets.
-- General service config: manage via `cowork-config` Config Server.
-- Local-only config: `application-local.yml` (must be in `.gitignore`).
+- Sensitive values (DB credentials, JWT secrets): inject via environment variables. Never hardcode in source files.
+- Local-only config: `.env.local` (must be in `.gitignore`).
 
-## Required Flyway Config for All Spring Boot Services
+## MikroORM Config
 
-```yaml
-spring:
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-```
+- Always provide both `dist/**/*.entity.js` and `src/**/*.entity.ts` in the `entities` array to support both development and production builds.
+- Use `defineConfig` from `@mikro-orm/core` for type-safe configuration.
 
-## Service Startup Order
+## Environment Variables
 
-```
-1. cowork-config   (Eureka + Config Server — start first)
-2. cowork-gateway  (start after Config Server is ready)
-3. Business services  (authorization, user, team, project, channel — order doesn't matter)
+```typescript
+// correct
+host: process.env.DATABASE_HOST ?? 'localhost',
+
+// wrong — never hardcode credentials
+password: 'mypassword123',
 ```
