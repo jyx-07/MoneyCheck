@@ -5,8 +5,11 @@ export const BaseEntity = defineEntity({
   abstract: true,
   properties: {
     id: p.integer().primary().autoincrement(),
-    createdAt: p.datetime(),
-    updatedAt: p.datetime().onUpdate(() => new Date()),
+    createdAt: p.datetime().onCreate(() => new Date()),
+    updatedAt: p
+      .datetime()
+      .onCreate(() => new Date())
+      .onUpdate(() => new Date()),
   },
 });
 

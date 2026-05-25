@@ -7,6 +7,6 @@ export default defineConfig({
   dbName: process.env.DATABASE_NAME ?? 'finance_tracker',
   user: process.env.DATABASE_USER ?? 'postgres',
   password: process.env.DATABASE_PASSWORD ?? 'postgres',
-  entities: ['src/**/*.entity{.ts,.js}'],
+  entities: ['dist/**/*.entity.js', 'src/**/*.entity.ts'],
   extensions: [Migrator],
 });

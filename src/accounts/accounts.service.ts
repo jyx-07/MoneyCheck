@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { AccountRepository } from './repository/account.repository';
 import { Account } from './entity/account.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -9,6 +10,7 @@ import { UpdateAccountDto } from './dto/update-account.dto';
 export class AccountsService {
   constructor(
     private readonly em: EntityManager,
+    @InjectRepository(Account)
     private readonly accountsRepository: AccountRepository,
   ) {}
 
@@ -24,8 +26,6 @@ export class AccountsService {
     const account = this.em.create(Account, {
       name: dto.name,
       balance: dto.balance,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
     await this.em.flush();
