@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { CategoryRepository } from './repository/category.repository';
 import { Category } from './entity/category.entity';
 import { CategoryType } from './enum/category.enum';
@@ -10,6 +11,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 export class CategoriesService {
   constructor(
     private readonly em: EntityManager,
+    @InjectRepository(Category)
     private readonly categoryRepository: CategoryRepository,
   ) {}
 
@@ -22,7 +24,7 @@ export class CategoriesService {
   }
 
   async findOne(id: number): Promise<Category> {
-    return this.categoryRepository.findOneOrFail(id);
+    return this.categoryRepository.findByIdOrFail(id);
   }
 
   async create(dto: CreateCategoryDto): Promise<Category> {
@@ -36,7 +38,7 @@ export class CategoriesService {
   }
 
   async update(id: number, dto: UpdateCategoryDto): Promise<Category> {
-    const category = await this.categoryRepository.findOneOrFail(id);
+    const category = await this.categoryRepository.findByIdOrFail(id);
 
     this.em.assign(category, dto);
     await this.em.flush();
@@ -44,7 +46,7 @@ export class CategoriesService {
   }
 
   async remove(id: number): Promise<void> {
-    const category = await this.categoryRepository.findOneOrFail(id);
+    const category = await this.categoryRepository.findByIdOrFail(id);
     this.em.remove(category);
     await this.em.flush();
   }

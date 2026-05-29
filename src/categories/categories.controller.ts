@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   ParseIntPipe,
   Post,
   Put,
@@ -19,7 +20,7 @@ export class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
 
   @Get()
-  findAll(@Query('type') type?: CategoryType) {
+  findAll(@Query('type', new ParseEnumPipe(CategoryType, { optional: true })) type?: CategoryType) {
     if (type) {
       return this.categoriesService.findByType(type);
     }
