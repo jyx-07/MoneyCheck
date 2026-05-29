@@ -45,7 +45,7 @@ export class AccountsService {
   }
 
   async removeAccount(id: number): Promise<void> {
-    const account = await this.accountsRepository.findByIdOrFail(id)
+    const account = await this.accountsRepository.findByIdOrFail(id);
     this.em.remove(account);
     await this.em.flush();
   }
