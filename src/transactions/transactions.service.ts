@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Transaction } from '../transactions/entity/transaction.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { Transaction } from './entity/transaction.entity';
 import { TransactionRepository } from './repository/transaction.repository';
+import { Account } from '../accounts/entity/account.entity';
 import { AccountRepository } from '../accounts/repository/account.repository';
+import { Category } from '../categories/entity/category.entity';
 import { CategoryRepository } from '../categories/repository/category.repository';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -11,11 +14,12 @@ import { TransactionType } from './enum/transaction.enum';
 @Injectable()
 export class TransactionsService {
   constructor(
-    // Unit of Work, Identity Map 관리
     private readonly em: EntityManager,
+    @InjectRepository(Transaction)
     private readonly transactionRepository: TransactionRepository,
-    // 거래 생성/삭제 시 계좌 잔액 업데이트를 위해 주입
+    @InjectRepository(Account)
     private readonly accountRepository: AccountRepository,
+    @InjectRepository(Category)
     private readonly categoryRepository: CategoryRepository,
   ) {}
 
@@ -34,10 +38,10 @@ export class TransactionsService {
     // 둘 중 하나라도 실패하면 전체 rollback
     return this.em.transactional(async (em) => {
       // 계좌 조회 — 잔액 업데이트를 위해
-      const account = await this.accountRepository.findByIdOrFail(
+      const account = await em.getRepository(Account).findByIdOrFail(
         dto.accountId,
       );
-      const category = await this.categoryRepository.findByIdOrFail(
+      const category = await em.getRepository(Category).findByIdOrFail(
         dto.categoryId,
       );
 
@@ -67,7 +71,7 @@ export class TransactionsService {
   async remove(id: number): Promise<void> {
     // 잔액 복구 + 거래 삭제를 하나의 트랜잭션으로 묶음
     await this.em.transactional(async (em) => {
-      const transaction = await this.transactionRepository.findByIdOrFail(id);
+      const transaction = await em.getRepository(Transaction).findByIdOrFail(id);
 
       // lazy 관계라 명시적으로 populate 필요
       await em.populate(transaction, ['account']);
