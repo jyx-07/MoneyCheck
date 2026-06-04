@@ -1,125 +1,91 @@
 import { Injectable } from '@nestjs/common';
-import { EntityManager } from '@mikro-orm/core';
-import { Transaction } from '../transactions/entity/transaction.entity';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { raw } from '@mikro-orm/core';
 import { Budget } from '../budgets/entity/budget.entity';
 import { Category } from '../categories/entity/category.entity';
+import { Transaction } from '../transactions/entity/transaction.entity';
 import { TransactionType } from '../transactions/enum/transaction.enum';
+
+type SummaryRow = { type: string; total: string };
+type CategoryExpenseRow = { category_id: number; category_name: string; total: string };
+type ExpenseByCategoryRow = { category_id: number; total: string };
 
 @Injectable()
 export class StatisticsService {
-  constructor(
-    // 직접 쿼리를 위해 EntityManager 주입
-    // 별도 레포지토리 없이 em으로 집계 쿼리 처리
-    private readonly em: EntityManager,
-  ) {}
+  constructor(private readonly em: EntityManager) {}
 
-  // 특정 연월 수입/지출 합계 조회
   async getMonthlySummary(year: number, month: number) {
     const [from, to] = monthDateRange(year, month);
 
-    // 해당 월 전체 거래 조회
-    const transactions = await this.em.find(Transaction, {
-      date: { $gte: from, $lte: to },
-    });
+    // DB 수준 집계 — type별 SUM
+    const rows = (await this.em
+      .createQueryBuilder(Transaction, 't')
+      .select(['t.type', raw('SUM(t.amount) as total')])
+      .where({ date: { $gte: from, $lte: to } })
+      .groupBy('t.type')
+      .execute('all')) as SummaryRow[];
 
-    // 수입 합계
-    const totalIncome = transactions
-      .filter((t) => t.type === TransactionType.INCOME)
-      .reduce((sum, t) => sum + t.amount, 0);
+    const totalIncome = Number(
+      rows.find((r) => r.type === TransactionType.INCOME)?.total ?? 0,
+    );
+    const totalExpense = Number(
+      rows.find((r) => r.type === TransactionType.EXPENSE)?.total ?? 0,
+    );
 
-    // 지출 합계
-    const totalExpense = transactions
-      .filter((t) => t.type === TransactionType.EXPENSE)
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    return {
-      year,
-      month,
-      totalIncome,
-      totalExpense,
-      // 순수익 — 수입 - 지출
-      netAmount: totalIncome - totalExpense,
-    };
+    return { year, month, totalIncome, totalExpense, netAmount: totalIncome - totalExpense };
   }
 
-  // 카테고리별 지출 합계 조회
   async getCategoryExpenses(year: number, month: number) {
     const [from, to] = monthDateRange(year, month);
 
-    // 지출 거래만 조회 + category populate
-    // populate — lazy 관계라 명시적으로 불러와야 카테고리 정보 접근 가능
-    const transactions = await this.em.find(
-      Transaction,
-      {
-        date: { $gte: from, $lte: to },
-        type: TransactionType.EXPENSE,
-      },
-      { populate: ['category'] },
-    );
+    // DB 수준 집계 — category join 후 SUM + GROUP BY
+    const rows = (await this.em
+      .createQueryBuilder(Transaction, 't')
+      .select([
+        raw('c.id as category_id'),
+        raw('c.name as category_name'),
+        raw('SUM(t.amount) as total'),
+      ])
+      .leftJoin('t.category', 'c')
+      .where({ date: { $gte: from, $lte: to }, type: TransactionType.EXPENSE })
+      .groupBy([raw('c.id'), raw('c.name')])
+      .execute('all')) as CategoryExpenseRow[];
 
-    // 카테고리별로 그룹핑해서 합계 계산
-    const result = transactions.reduce(
-      (acc, t) => {
-        const category = t.category as Category;
-        const { id: categoryId, name: categoryName } = category;
-
-        if (!acc[categoryId]) {
-          acc[categoryId] = { categoryId, categoryName, total: 0 };
-        }
-        acc[categoryId].total += t.amount;
-        return acc;
-      },
-      {} as Record<
-        number,
-        { categoryId: number; categoryName: string; total: number }
-      >,
-    );
-
-    return Object.values(result);
+    return rows.map((r) => ({
+      categoryId: Number(r.category_id),
+      categoryName: String(r.category_name),
+      total: Number(r.total),
+    }));
   }
 
-  // 예산 대비 실제 지출 비교
   async getBudgetComparison(year: number, month: number) {
     const [from, to] = monthDateRange(year, month);
 
-    // 해당 월 예산 목록 조회 + category populate
-    const budgets = await this.em.find(
-      Budget,
-      { year, month },
-      { populate: ['category'] },
+    const budgets = await this.em.find(Budget, { year, month }, { populate: ['category'] });
+
+    // DB 수준 집계 — category별 지출 SUM
+    const expenseRows = (await this.em
+      .createQueryBuilder(Transaction, 't')
+      .select(['t.category', raw('SUM(t.amount) as total')])
+      .where({ date: { $gte: from, $lte: to }, type: TransactionType.EXPENSE })
+      .groupBy('t.category')
+      .execute('all')) as ExpenseByCategoryRow[];
+
+    const expenseByCategory = new Map(
+      expenseRows.map((r) => [Number(r.category_id), Number(r.total)]),
     );
 
-    // 해당 월 지출 거래 조회 + category populate
-    const transactions = await this.em.find(
-      Transaction,
-      {
-        date: { $gte: from, $lte: to },
-        type: TransactionType.EXPENSE,
-      },
-      { populate: ['category'] },
-    );
-
-    // 카테고리별 실제 지출 합계
-    const expenseByCategory = transactions.reduce(
-      (acc, t) => {
-        const categoryId = (t.category as Category).id;
-        acc[categoryId] = (acc[categoryId] ?? 0) + t.amount;
-        return acc;
-      },
-      {} as Record<number, number>,
-    );
-
-    // 예산 vs 실제 지출 비교
     return budgets.map((budget) => {
       const category = budget.category as Category;
       const categoryId = category.id;
       const categoryName = category.name;
+      const actualAmount = expenseByCategory.get(categoryId) ?? 0;
       return {
         categoryId,
         categoryName,
         budgetAmount: budget.amount,
-        actualAmount: expenseByCategory[categoryId] ?? 0,
-        remainingAmount: budget.amount - (expenseByCategory[categoryId] ?? 0),
+        actualAmount,
+        remainingAmount: budget.amount - actualAmount,
       };
     });
   }
