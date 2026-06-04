@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -24,6 +25,9 @@ export class BudgetsController {
   ) {
     if (year !== undefined && month !== undefined) {
       return this.budgetsService.findByYearAndMonth(year, month);
+    }
+    if (year !== undefined || month !== undefined) {
+      throw new BadRequestException('year와 month는 함께 제공되어야 합니다.');
     }
     return this.budgetsService.findAll();
   }
