@@ -7,6 +7,7 @@ export const Budget = defineEntity({
   name: 'Budget',
   extends: BaseEntity,
   repository: () => BudgetRepository,
+  uniques: [{ properties: ['year', 'month', 'category'] }],
   properties: {
     // 예산 한도 금액
     // p.decimal('number') — DB는 DECIMAL, JS는 number로 처리
