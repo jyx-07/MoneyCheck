@@ -1,5 +1,6 @@
 import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
+import { MonthPipe } from './pipes/month.pipe';
 
 @Controller('statistics')
 export class StatisticsController {
@@ -8,7 +9,7 @@ export class StatisticsController {
   @Get('summary')
   getMonthlySummary(
     @Query('year', ParseIntPipe) year: number,
-    @Query('month', ParseIntPipe) month: number,
+    @Query('month', MonthPipe) month: number,
   ) {
     return this.statisticsService.getMonthlySummary(year, month);
   }
@@ -16,7 +17,7 @@ export class StatisticsController {
   @Get('category-expenses')
   getCategoryExpenses(
     @Query('year', ParseIntPipe) year: number,
-    @Query('month', ParseIntPipe) month: number,
+    @Query('month', MonthPipe) month: number,
   ) {
     return this.statisticsService.getCategoryExpenses(year, month);
   }
@@ -24,7 +25,7 @@ export class StatisticsController {
   @Get('budget-comparison')
   getBudgetComparison(
     @Query('year', ParseIntPipe) year: number,
-    @Query('month', ParseIntPipe) month: number,
+    @Query('month', MonthPipe) month: number,
   ) {
     return this.statisticsService.getBudgetComparison(year, month);
   }
