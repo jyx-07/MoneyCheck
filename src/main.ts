@@ -10,6 +10,9 @@ async function bootstrap() {
   // whitelist: true — DTO에 정의되지 않은 필드는 자동 제거
   // 클라이언트가 엉뚱한 필드를 보내도 무시됨
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  await app.listen(process.env.PORT ?? 3000);
+
+  // '0.0.0.0' — 외부에서 접근 가능하게 모든 네트워크 인터페이스에서 수신
+  // localhost만 쓰면 Fly.io 같은 외부 서버에서 접근 불가
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();
