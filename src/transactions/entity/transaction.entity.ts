@@ -37,10 +37,10 @@ export const Transaction = defineEntity({
 
     // p.manyToOne() — N:1 관계 선언
     // 여러 거래가 하나의 계좌에 속함
-    account: p.manyToOne(() => Account),
+    account: p.manyToOne(Account),
 
     // 여러 거래가 하나의 카테고리에 속함
-    category: p.manyToOne(() => Category),
+    category: p.manyToOne(Category),
   },
 });
 

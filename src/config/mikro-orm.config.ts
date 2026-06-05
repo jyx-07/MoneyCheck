@@ -1,4 +1,4 @@
-import { defineConfig } from '@mikro-orm/core';
+import { defineConfig } from '@mikro-orm/postgresql';
 import { Migrator } from '@mikro-orm/migrations';
 
 export default defineConfig({
@@ -7,6 +7,6 @@ export default defineConfig({
   dbName: process.env.DATABASE_NAME ?? 'finance_tracker',
   user: process.env.DATABASE_USER ?? 'postgres',
   password: process.env.DATABASE_PASSWORD ?? 'postgres',
-  entities: ['dist/**/*.entity.js', 'src/**/*.entity.ts'],
+  entities: ['dist/**/*.entity.js'],
   extensions: [Migrator],
 });

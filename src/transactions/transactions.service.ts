@@ -38,12 +38,8 @@ export class TransactionsService {
     // 둘 중 하나라도 실패하면 전체 rollback
     return this.em.transactional(async (em) => {
       // 계좌 조회 — 잔액 업데이트를 위해
-      const account = await em.getRepository(Account).findByIdOrFail(
-        dto.accountId,
-      );
-      const category = await em.getRepository(Category).findByIdOrFail(
-        dto.categoryId,
-      );
+      const account = await em.findOneOrFail(Account, dto.accountId);
+      const category = await em.findOneOrFail(Category, dto.categoryId);
 
       // 잔액 업데이트
       // INCOME — 잔액 증가, EXPENSE — 잔액 감소
@@ -71,7 +67,7 @@ export class TransactionsService {
   async remove(id: number): Promise<void> {
     // 잔액 복구 + 거래 삭제를 하나의 트랜잭션으로 묶음
     await this.em.transactional(async (em) => {
-      const transaction = await em.getRepository(Transaction).findByIdOrFail(id);
+      const transaction = await em.findOneOrFail(Transaction, id);
 
       // lazy 관계라 명시적으로 populate 필요
       await em.populate(transaction, ['account']);

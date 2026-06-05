@@ -4,6 +4,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { CategoriesModule } from './categories/categories.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { BudgetsModule } from './budgets/budgets.module';
+import { StatisticsModule } from './statistics/statistics.module';
 import config from './config/mikro-orm.config';
 
 @Module({
@@ -15,6 +16,7 @@ import config from './config/mikro-orm.config';
     CategoriesModule,
     TransactionsModule,
     BudgetsModule,
+    StatisticsModule,
   ],
 })
 export class AppModule {}

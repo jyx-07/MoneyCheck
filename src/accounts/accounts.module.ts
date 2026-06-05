@@ -8,5 +8,6 @@ import { Account } from './entity/account.entity';
   imports: [MikroOrmModule.forFeature([Account])],
   providers: [AccountsService],
   controllers: [AccountsController],
+  exports: [MikroOrmModule],
 })
 export class AccountsModule {}

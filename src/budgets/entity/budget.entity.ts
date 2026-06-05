@@ -18,7 +18,7 @@ export const Budget = defineEntity({
 
     month: p.integer(),
 
-    category: p.manyToOne(() => Category),
+    category: p.manyToOne(Category),
   },
 });
 
