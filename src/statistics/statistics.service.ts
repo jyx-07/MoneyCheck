@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { EntityManager as CoreEntityManager, raw } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
-import { raw } from '@mikro-orm/core';
 import { Budget } from '../budgets/entity/budget.entity';
 import { Category } from '../categories/entity/category.entity';
 import { Transaction } from '../transactions/entity/transaction.entity';
@@ -12,7 +12,7 @@ type ExpenseByCategoryRow = { category_id: number; total: string };
 
 @Injectable()
 export class StatisticsService {
-  constructor(private readonly em: EntityManager) {}
+  constructor(@Inject(CoreEntityManager) private readonly em: EntityManager) {}
 
   async getMonthlySummary(year: number, month: number) {
     const [from, to] = monthDateRange(year, month);
