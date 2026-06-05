@@ -76,5 +76,11 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "mikro-orm": {
+    "useTsNode": false,
+    "configPaths": [
+      "./dist/mikro-orm.config.js"
+    ]
   }
 }
