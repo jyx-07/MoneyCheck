@@ -10,7 +10,12 @@ export default defineConfig({
   dbName: process.env.DATABASE_NAME ?? 'finance_tracker',
   user: process.env.DATABASE_USER ?? 'postgres',
   password: process.env.DATABASE_PASSWORD ?? 'postgres',
-  entities: ['dist/**/*.entity.js'],
+  // CLI 실행 시 TS 파일 직접 읽음
+  // 프로덕션 빌드 시에는 dist 경로 사용
+  entities:
+    process.env.NODE_ENV === 'production'
+      ? ['dist/**/*.entity.js']
+      : ['src/**/*.entity.ts'],
   entitiesTs: ['src/**/*.entity.ts'],
   extensions: [Migrator],
 });
